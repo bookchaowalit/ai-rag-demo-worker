@@ -1,0 +1,13 @@
+{
+  "name": "rag-demo-cf",
+  "version": "1.0.0",
+  "description": "RAG-as-a-Service Demo on Cloudflare Workers",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "wrangler": "^3.95.0"
+  }
+}

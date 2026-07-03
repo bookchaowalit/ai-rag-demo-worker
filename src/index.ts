@@ -1,11 +1,12 @@
 /**
  * RAG-as-a-Service Demo — Cloudflare Worker
  * Turn company documents into an AI assistant that answers questions 24/7
+ * 
+ * Demo version: In-memory storage (resets on worker restart)
  */
 
 export interface Env {
   AI: Ai;
-  KV: KVNamespace;
   ENVIRONMENT: string;
 }
 
@@ -27,6 +28,9 @@ interface QueryResponse {
   }>;
   confidence: number;
 }
+
+// In-memory storage for demo
+const knowledgeBase: Map<string, Chunk> = new Map();
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
@@ -52,6 +56,7 @@ export default {
           status: 'running',
           version: '1.0.0',
           platform: 'Cloudflare Workers',
+          demo_mode: true,
         }), {
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
@@ -78,8 +83,8 @@ export default {
         // Generate embeddings for all chunks
         const embeddings = await generateEmbeddings(env, chunks.map(c => c.text));
         
-        // Store chunks with embeddings in KV
-        await storeChunks(env, chunks, embeddings, file.name);
+        // Store chunks with embeddings in memory
+        storeChunks(chunks, embeddings, file.name);
 
         return new Response(JSON.stringify({
           status: 'success',
@@ -111,7 +116,7 @@ export default {
 
       // Get stats
       if (path === '/stats' && request.method === 'GET') {
-        const stats = await getStats(env);
+        const stats = getStats();
         return new Response(JSON.stringify(stats), {
           headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
@@ -194,21 +199,13 @@ async function generateEmbeddings(env: Env, texts: string[]): Promise<number[][]
 }
 
 /**
- * Store chunks with embeddings in KV
+ * Store chunks with embeddings in memory
  */
-async function storeChunks(
-  env: Env,
+function storeChunks(
   chunks: Array<{ id: string; text: string; chunk_id: number }>,
   embeddings: number[][],
   filename: string
-): Promise<void> {
-  // Get existing chunk index
-  const indexKey = `index:${filename}`;
-  const existingIndex = await env.KV.get(indexKey, 'json') as string[] || [];
-  
-  const chunkIds: string[] = [...existingIndex];
-  
-  // Store each chunk
+): void {
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
     const embedding = embeddings[i];
@@ -221,24 +218,22 @@ async function storeChunks(
       chunk_id: chunk.chunk_id,
     };
     
-    await env.KV.put(`chunk:${chunk.id}`, JSON.stringify(chunkData));
-    chunkIds.push(chunk.id);
+    knowledgeBase.set(chunk.id, chunkData);
   }
-  
-  // Update index
-  await env.KV.put(indexKey, JSON.stringify(chunkIds));
-  
-  // Update global index
-  const globalKey = 'index:__all__';
-  const globalIndex = await env.KV.get(globalKey, 'json') as string[] || [];
-  const updatedGlobal = [...new Set([...globalIndex, ...chunkIds])];
-  await env.KV.put(globalKey, JSON.stringify(updatedGlobal));
 }
 
 /**
  * Query knowledge base with RAG
  */
 async function queryKnowledgeBase(env: Env, question: string, topK: number): Promise<QueryResponse> {
+  if (knowledgeBase.size === 0) {
+    return {
+      answer: 'No documents in knowledge base. Please upload documents first.',
+      sources: [],
+      confidence: 0,
+    };
+  }
+
   // Generate question embedding
   const questionEmbedding = await env.AI.run('@cf/baai/bge-base-en-v1.5', {
     text: [question],
@@ -246,27 +241,12 @@ async function queryKnowledgeBase(env: Env, question: string, topK: number): Pro
   
   const queryVec = questionEmbedding.data[0].embedding;
   
-  // Get all chunk IDs
-  const globalKey = 'index:__all__';
-  const allChunkIds = await env.KV.get(globalKey, 'json') as string[] || [];
-  
-  if (allChunkIds.length === 0) {
-    return {
-      answer: 'No documents in knowledge base. Please upload documents first.',
-      sources: [],
-      confidence: 0,
-    };
-  }
-  
-  // Retrieve all chunks and compute similarity
+  // Compute similarity for all chunks
   const scored: Array<Chunk & { score: number }> = [];
   
-  for (const chunkId of allChunkIds) {
-    const chunkData = await env.KV.get(`chunk:${chunkId}`, 'json') as Chunk;
-    if (chunkData) {
-      const score = cosineSimilarity(queryVec, chunkData.embedding);
-      scored.push({ ...chunkData, score });
-    }
+  for (const chunk of knowledgeBase.values()) {
+    const score = cosineSimilarity(queryVec, chunk.embedding);
+    scored.push({ ...chunk, score });
   }
   
   // Sort by score and take top K
@@ -337,15 +317,13 @@ Answer (in Thai or English based on the question):`;
 /**
  * Get knowledge base statistics
  */
-async function getStats(env: Env): Promise<any> {
-  const globalKey = 'index:__all__';
-  const allChunkIds = await env.KV.get(globalKey, 'json') as string[] || [];
-  
+function getStats(): any {
   return {
-    total_chunks: allChunkIds.length,
+    total_chunks: knowledgeBase.size,
     status: 'ready',
     platform: 'Cloudflare Workers',
     ai_model: '@cf/meta/llama-3-8b-instruct',
     embedding_model: '@cf/baai/bge-base-en-v1.5',
+    demo_mode: true,
   };
 }

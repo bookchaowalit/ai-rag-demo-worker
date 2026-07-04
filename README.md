@@ -1,0 +1,124 @@
+# RAG-as-a-Service Demo
+
+Turn company documents into an AI assistant that answers questions 24/7 — in Thai, with citations.
+
+## Features
+
+- **Document Upload**: Upload PDF, DOCX, TXT files
+- **Smart Chunking**: Automatic text segmentation with overlap
+- **Vector Search**: Cosine similarity for semantic search
+- **AI Answers**: Llama 3.8B powered responses with source citations
+- **Thai Language**: Full Thai NLP support
+- **Cloudflare Workers**: Globally distributed, serverless
+
+## Quick Start (Local)
+
+1. Install dependencies:
+```bash
+npm install
+```
+
+2. Deploy to Cloudflare:
+```bash
+# Install wrangler
+npm install -g wrangler
+
+# Login to Cloudflare
+wrangler login
+
+# Deploy
+wrangler deploy
+```
+
+3. Access the API:
+```bash
+# Root endpoint
+curl https://rag-demo.<your-subdomain>.workers.dev/
+
+# Upload document
+curl -X POST https://rag-demo.<your-subdomain>.workers.dev/upload \
+  -F "file=@document.pdf"
+
+# Query knowledge base
+curl -X POST https://rag-demo.<your-subdomain>.workers.dev/query \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the refund policy?", "top_k": 3}'
+
+# Get stats
+curl https://rag-demo.<your-subdomain>.workers.dev/stats
+```
+
+## Architecture
+
+```
+Client → Cloudflare Worker → Document Processor → In-Memory Storage
+                                    ↓
+                            Workers AI Embeddings
+                                    ↓
+                            Workers AI Llama 3.8B
+```
+
+## Tech Stack
+
+- **Platform**: Cloudflare Workers
+- **AI**: Cloudflare Workers AI
+  - Embeddings: `@cf/baai/bge-base-en-v1.5`
+  - LLM: `@cf/meta/llama-3-8b-instruct`
+- **Storage**: In-memory (demo mode)
+- **Language**: JavaScript
+
+## API Endpoints
+
+### Upload Document
+```bash
+POST /upload
+Content-Type: multipart/form-data
+
+file: <document.pdf>
+```
+
+### Query Knowledge Base
+```bash
+POST /query
+Content-Type: application/json
+
+{
+  "question": "What is the refund policy?",
+  "top_k": 3
+}
+```
+
+### Get Stats
+```bash
+GET /stats
+```
+
+## Production Deployment
+
+For production use, replace in-memory storage with:
+- **Cloudflare KV**: For persistent key-value storage
+- **Cloudflare D1**: For SQL database
+- **Cloudflare Vectorize**: For vector similarity search
+
+## Pricing Model
+
+- **Setup Fee**: ฿30K-200K (one-time)
+- **Monthly Retainer**: ฿5K-25K/month
+- **ROI**: 1/10th the cost of hiring staff
+
+## Target Customers
+
+- Law firms (10-50 employees)
+- Accounting firms
+- Insurance companies
+- Any document-heavy business
+
+## Next Steps
+
+- [x] Core RAG backend (Cloudflare Worker)
+- [ ] Add web UI (Next.js chat interface)
+- [ ] Persistent storage (KV/D1 + Vectorize)
+- [ ] Multi-tenant support
+- [ ] Access control
+- [ ] Analytics dashboard
+- [ ] Deploy to production

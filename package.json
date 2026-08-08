@@ -4,6 +4,7 @@
   "description": "RAG-as-a-Service Demo on Cloudflare Workers",
   "scripts": {
     "dev": "wrangler dev",
+    "predeploy": "node scripts/guard-demo-deploy.mjs",
     "deploy": "wrangler deploy"
   },
   "devDependencies": {

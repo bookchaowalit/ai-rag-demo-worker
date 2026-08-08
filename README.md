@@ -18,17 +18,19 @@ Turn company documents into an AI assistant that answers questions 24/7 — in T
 npm install
 ```
 
-2. Deploy to Cloudflare:
+2. Run locally (recommended):
 ```bash
-# Install wrangler
-npm install -g wrangler
-
-# Login to Cloudflare
-wrangler login
-
-# Deploy
-wrangler deploy
+npm run dev
 ```
+
+This worker is a superseded demo with public, in-memory storage. Do not use it
+for production data. An explicit demo deployment requires:
+
+```bash
+ALLOW_RAG_DEMO_DEPLOY=true npm run deploy
+```
+
+The default `npm run deploy` is blocked by a predeploy guard.
 
 3. Access the API:
 ```bash

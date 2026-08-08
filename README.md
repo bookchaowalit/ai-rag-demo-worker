@@ -1,3 +1,11 @@
+---
+title: "RAG-as-a-Service Demo"
+tags: [documentation, infra]
+created: 2026-07-04
+updated: 2026-08-08
+description: "Documentation for RAG-as-a-Service Demo."
+---
+
 # RAG-as-a-Service Demo
 
 Turn company documents into an AI assistant that answers questions 24/7 — in Thai, with citations.

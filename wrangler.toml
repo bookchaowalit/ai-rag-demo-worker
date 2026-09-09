@@ -7,3 +7,5 @@ binding = "AI"
 
 [vars]
 ENVIRONMENT = "demo"
+# Optional comma-separated browser origins. Omit to disable cross-origin access.
+# CORS_ORIGINS = "http://localhost:3000,http://localhost:5173"

@@ -8,17 +8,32 @@
 // In-memory storage for demo
 const knowledgeBase = new Map();
 
+function getCorsHeaders(request, env) {
+  const origin = request.headers.get('Origin');
+  const allowedOrigins = (env.CORS_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const headers = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  };
+
+  if (origin && allowedOrigins.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
+    const corsHeaders = getCorsHeaders(request, env);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });

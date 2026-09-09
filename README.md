@@ -40,6 +40,11 @@ ALLOW_RAG_DEMO_DEPLOY=true npm run deploy
 
 The default `npm run deploy` is blocked by a predeploy guard.
 
+Browser CORS is disabled by default. If a local demo UI needs browser access,
+set the `CORS_ORIGINS` Worker variable to a comma-separated exact-origin list
+(for example `http://localhost:3000,http://localhost:5173`). Wildcard origins
+are intentionally unsupported.
+
 3. Access the API:
 ```bash
 # Root endpoint

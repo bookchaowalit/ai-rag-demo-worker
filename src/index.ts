@@ -8,6 +8,8 @@
 export interface Env {
   AI: Ai;
   ENVIRONMENT: string;
+  /** Comma-separated browser origins; unset means no cross-origin access. */
+  CORS_ORIGINS?: string;
 }
 
 interface Chunk {
@@ -32,17 +34,32 @@ interface QueryResponse {
 // In-memory storage for demo
 const knowledgeBase: Map<string, Chunk> = new Map();
 
+function getCorsHeaders(request: Request, env: Env): Record<string, string> {
+  const origin = request.headers.get('Origin');
+  const allowedOrigins = (env.CORS_ORIGINS || '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
+  };
+
+  if (origin && allowedOrigins.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
+}
+
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    // CORS headers
-    const corsHeaders = {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    };
+    const corsHeaders = getCorsHeaders(request, env);
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });

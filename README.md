@@ -137,3 +137,7 @@ For production use, replace in-memory storage with:
 - [ ] Access control
 - [ ] Analytics dashboard
 - [ ] Deploy to production
+
+## ที่มา
+
+ย้ายมาจาก `solo-empire/infra/rag-demo-cf/` (2026-10-11) พร้อมประวัติ git. เป็น demo เท่านั้น: deploy ถูกกันด้วย `scripts/guard-demo-deploy.mjs` (ต้องตั้ง `ALLOW_RAG_DEMO_DEPLOY`). ติดตั้ง `npm ci`.

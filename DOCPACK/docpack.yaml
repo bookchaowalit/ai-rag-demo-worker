@@ -1,0 +1,8 @@
+system_id: bookchaowalit/private/solo-rag-demo-cf
+prefix: CARD
+brand: "SOLO RAG DEMO CF"
+subtitle: "เดโม RAG บน Cloudflare Workers (ถูกแทนที่แล้ว) เก็บข้อมูลในหน่วยความจำ"
+footer: "solo-rag-demo-cf — Product Card"
+color: "#c2571a"
+audience: internal
+tier: L0

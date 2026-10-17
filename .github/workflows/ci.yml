@@ -1,0 +1,29 @@
+# CI + security baseline (DevSecOps Phase 1). Public repository: GitHub-hosted runners.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  worker:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/ci-node.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
+    with:
+      # Exception: the repo has no tests, lint config or tsconfig yet, so lint and typecheck
+      # are skipped by `auto` with a warning and tests are off.
+      test-command: ""
+      # Bundle the Worker without uploading anything (--dry-run exits before deploy; CI has no
+      # Cloudflare credentials). Catches syntax and import errors in src/index.ts.
+      build-command: WRANGLER_SEND_METRICS=false npx wrangler deploy --dry-run --outdir "$RUNNER_TEMP/worker-dist"
+
+  security:
+    uses: bookchaowalit/platform-ci-workflows/.github/workflows/security.yml@c37ef9d113eefb3ed45429717cb7ca201192c3fc # v1.0.1
